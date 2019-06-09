@@ -1,48 +1,56 @@
+/*
+Copyright 2014 The Kubernetes Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package v1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"github.com/amadeusitgroup/workflow-controller/pkg/api/daemonsetjob"
 )
+
+// SchemeGroupVersion is group version used to register these objects
+// TODO this should be in the "kubeconfig" group
+var SchemeGroupVersion = schema.GroupVersion{Group: "", Version: "v1"}
 
 var (
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
-	AddToScheme   = SchemeBuilder.AddToScheme
+	// TODO: move SchemeBuilder with zz_generated.deepcopy.go to k8s.io/api.
+	// localSchemeBuilder and AddToScheme will stay in k8s.io/kubernetes.
+	SchemeBuilder      runtime.SchemeBuilder
+	localSchemeBuilder = &SchemeBuilder
+	AddToScheme        = localSchemeBuilder.AddToScheme
 )
 
-const (
-	// ResourcePlural is the id to indentify pluarals
-	ResourcePlural = "daemonsetjobs"
-	// ResourceSingular represents the id for identify singular resource
-	ResourceSingular = "daemonsetjob"
-	// ResourceKind
-	ResourceKind = "DaemonSetJob"
-	// ResourceVersion
-	ResourceVersion = "v1"
-)
-
-// SchemeGroupVersion is the group version used to register these objects.
-var SchemeGroupVersion = schema.GroupVersion{Group: daemonsetjob.GroupName, Version: ResourceVersion}
-
-// Resource takes an unqualified resource and returns a Group qualified GroupResource
-func Resource(resource string) schema.GroupResource {
-	return SchemeGroupVersion.WithResource(resource).GroupResource()
+func init() {
+	// We only register manually written functions here. The registration of the
+	// generated functions takes place in the generated files. The separation
+	// makes the code compile even when the generated files are missing.
+	localSchemeBuilder.Register(addKnownTypes, addConversionFuncs)
 }
 
-// Kind takes an unqualified kind and returns back a Group qualified GroupKind
-func Kind(kind string) schema.GroupKind {
-	return SchemeGroupVersion.WithKind(kind).GroupKind()
-}
-
-// addKnownTypes adds the set of types defined in this package to the supplied scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&DaemonSetJob{},
-		&DaemonSetJobList{},
+		&Config{},
 	)
-	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
 	return nil
+}
+
+func (obj *Config) GetObjectKind() schema.ObjectKind { return obj }
+func (obj *Config) SetGroupVersionKind(gvk schema.GroupVersionKind) {
+	obj.APIVersion, obj.Kind = gvk.ToAPIVersionAndKind()
+}
+func (obj *Config) GroupVersionKind() schema.GroupVersionKind {
+	return schema.FromAPIVersionAndKind(obj.APIVersion, obj.Kind)
 }
